@@ -1,0 +1,2690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNC Production Scheduler Pro - v3.0 Final</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .calculator-view {
+            display: block;
+        }
+
+        .print-view {
+            display: none;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.95;
+        }
+
+        .header .company-info {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .header .company-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .version-badge {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .progress-bar {
+            background: #e9ecef;
+            height: 8px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .section:hover {
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 18px 25px;
+            font-weight: 600;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .section-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-icon {
+            font-size: 20px;
+        }
+
+        .collapse-indicator {
+            transition: transform 0.3s ease;
+            font-size: 14px;
+        }
+
+        .section.collapsed .collapse-indicator {
+            transform: rotate(-90deg);
+        }
+
+        .section-body {
+            padding: 25px;
+            background: #f8f9fa;
+            display: block;
+            max-height: 10000px;
+            overflow: visible;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+
+        .section.collapsed .section-body {
+            max-height: 0;
+            padding: 0 25px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 200px 1fr 100px;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .form-row-2col {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-row.total-row {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .required {
+            color: #e74c3c;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        input[type="time"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-family: inherit;
+            background: white;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            background: #fff;
+        }
+
+        input[readonly] {
+            background: #e9ecef;
+            cursor: not-allowed;
+            font-weight: 600;
+            color: #2c3e50;
+            border-color: #ced4da;
+        }
+
+        input.error {
+            border-color: #e74c3c;
+            background: #ffe6e6;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 12px;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .unit {
+            font-size: 13px;
+            color: #6c757d;
+            font-weight: 600;
+            background: #e9ecef;
+            padding: 12px 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f2994a 0%, #f2c94c 100%);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+
+        .btn-medium {
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+
+        .btn-block {
+            width: 100%;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        /* Part Card Styles */
+        .part-card {
+            background: white;
+            border: 3px solid #667eea;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2);
+            animation: fadeIn 0.5s ease-out;
+            position: relative;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .part-badge {
+            position: absolute;
+            top: -15px;
+            left: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .part-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #e0e0e0;
+            margin-top: 10px;
+        }
+
+        .part-title-section {
+            flex: 1;
+        }
+
+        .part-summary {
+            background: linear-gradient(135deg, #667eea10 0%, #764ba210 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            border: 2px solid #667eea30;
+        }
+
+        .summary-item {
+            text-align: center;
+            padding: 10px;
+        }
+
+        .summary-label {
+            font-size: 11px;
+            color: #6c757d;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .summary-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        /* Setup Card Styles */
+        .setup-card {
+            background: white;
+            border: 2px solid #f2994a;
+            border-left: 5px solid #f2994a;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            margin-left: 30px;
+            box-shadow: 0 3px 15px rgba(242, 153, 74, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .setup-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(242, 153, 74, 0.25);
+        }
+
+        .setup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f8f9fa;
+        }
+
+        .setup-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .setup-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .section-divider {
+            margin: 25px 0 20px 0;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-weight: 700;
+            color: #495057;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-left: 4px solid #667eea;
+        }
+
+        .add-setup-container {
+            margin: 30px 0 20px 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f2994a10 0%, #f2c94c10 100%);
+            border: 2px dashed #f2994a;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .add-part-container {
+            margin: 30px 0;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea10 0%, #764ba210 100%);
+            border: 3px dashed #667eea;
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        .add-part-container p {
+            color: #6c757d;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        /* Summary Table */
+        .summary-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 20px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .summary-table th,
+        .summary-table td {
+            padding: 15px;
+            text-align: left;
+        }
+
+        .summary-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .summary-table tr {
+            background: white;
+            transition: background 0.3s ease;
+        }
+
+        .summary-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .summary-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .summary-table tr:nth-child(even):hover {
+            background: #e9ecef;
+        }
+
+        .summary-table .total-row {
+            background: linear-gradient(135deg, #11998e20 0%, #38ef7d20 100%);
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .summary-table .total-row:hover {
+            background: linear-gradient(135deg, #11998e30 0%, #38ef7d30 100%);
+        }
+
+        .summary-table .completion-row {
+            background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-left: 5px solid #f2c94c;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-size: 13px;
+            line-height: 1.8;
+            box-shadow: 0 2px 10px rgba(242, 201, 76, 0.2);
+        }
+
+        .info-box h4 {
+            color: #856404;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            color: #667eea;
+        }
+
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2c3e50;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            white-space: nowrap;
+            font-size: 12px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        /* Toast Notification System */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: white;
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            min-width: 300px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideInRight 0.3s ease-out;
+            border-left: 4px solid #667eea;
+        }
+
+        .toast.success {
+            border-left-color: #11998e;
+        }
+
+        .toast.error {
+            border-left-color: #eb3349;
+        }
+
+        .toast.warning {
+            border-left-color: #f2994a;
+        }
+
+        .toast-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 4px;
+            color: #2c3e50;
+        }
+
+        .toast-message {
+            font-size: 13px;
+            color: #6c757d;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        .toast.hiding {
+            animation: slideOutRight 0.3s ease-out forwards;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Print Report Styles */
+        .print-report {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+        }
+
+        .report-header {
+            text-align: center;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .report-logo {
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .report-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .report-subtitle {
+            font-size: 14px;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+
+        .report-date {
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .report-section {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+
+        .report-section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .report-info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .report-info-item {
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .report-info-label {
+            font-size: 10px;
+            color: #6c757d;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .report-info-value {
+            font-size: 14px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 12px;
+        }
+
+        .report-table th,
+        .report-table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #dee2e6;
+        }
+
+        .report-table th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+            font-size: 11px;
+        }
+
+        .report-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .report-table .total-row {
+            background: #d4edda;
+            font-weight: 700;
+        }
+
+        .report-part-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            page-break-inside: avoid;
+        }
+
+        .report-part-title {
+            color: #667eea;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .report-part-info {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+
+        .report-footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 2px solid #e0e0e0;
+            text-align: center;
+            color: #6c757d;
+            font-size: 10px;
+        }
+
+        .report-signatures {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 40px;
+            page-break-inside: avoid;
+        }
+
+        .signature-block {
+            text-align: center;
+        }
+
+        .signature-line {
+            border-top: 2px solid #2c3e50;
+            margin-bottom: 8px;
+            margin-top: 40px;
+        }
+
+        .signature-label {
+            font-size: 12px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .signature-name {
+            font-size: 10px;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+
+        /* Print Styles */
+        @media print {
+            @page {
+                margin: 15mm;
+                size: A4;
+            }
+
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .calculator-view {
+                display: none !important;
+            }
+            
+            .print-view {
+                display: block !important;
+            }
+            
+            .toast-container {
+                display: none !important;
+            }
+            
+            .loading-overlay {
+                display: none !important;
+            }
+            
+            .print-report {
+                padding: 0;
+                max-width: 100%;
+            }
+            
+            .report-section {
+                page-break-inside: avoid;
+            }
+            
+            .report-table {
+                page-break-inside: auto;
+            }
+
+            .report-table tr {
+                page-break-inside: avoid;
+            }
+
+            .report-part-section {
+                page-break-inside: avoid;
+            }
+
+            .report-signatures {
+                page-break-inside: avoid;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row-2col {
+                grid-template-columns: 1fr;
+            }
+            
+            .setup-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .setup-card {
+                margin-left: 0;
+            }
+            
+            .add-setup-container {
+                margin-left: 0;
+            }
+            
+            .report-info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .report-signatures {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .button-group button {
+                width: 100%;
+            }
+
+            .toast-container {
+                left: 10px;
+                right: 10px;
+            }
+
+            .toast {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Calculator View -->
+    <div class="calculator-view">
+        <div class="container">
+            <div class="header">
+                <div class="version-badge">v3.0 Final</div>
+                <div class="header-content">
+                    <h1>📅 CNC Production Scheduler Pro</h1>
+                    <p>Advanced Multi-Part, Multi-Setup Production Planning System (Max 15 Parts)</p>
+                    <div class="company-info">
+                        <div class="company-name">Enata Industries LLC</div>
+                        <div>Prepared by: Pavin Anilkumar Jayakumari | CNC Team Lead</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content">
+                <!-- Progress Indicator -->
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+
+                <!-- Statistics Dashboard -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Project Hours</div>
+                        <div class="stat-value" id="statTotalHours">0.0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Parts</div>
+                        <div class="stat-value" id="statTotalParts">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Setups</div>
+                        <div class="stat-value" id="statTotalSetups">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Calendar Days</div>
+                        <div class="stat-value" id="statCalendarDays">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Completion Date</div>
+                        <div class="stat-value" id="statCompletionDate" style="font-size: 16px;">Not Set</div>
+                    </div>
+                </div>
+
+                <!-- Section 1: Project Information -->
+                <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <div class="section-header-left">
+                            <span class="section-icon">📋</span>
+                            <span>1. PROJECT INFORMATION</span>
+                        </div>
+                        <span class="collapse-indicator">▼</span>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-row-2col">
+                            <div class="form-group">
+                                <label>Project Name / ID <span class="required">*</span></label>
+                                <input type="text" id="projectName" value="PROTO-2026-045" placeholder="Enter project identifier" onchange="validateInput(this)">
+                                <div class="error-message" id="projectName-error">Project name is required</div>
+                            </div>
+                            <div class="form-group">
+                                <label>Customer / Company <span class="required">*</span></label>
+                                <input type="text" id="customerName" value="Client Company Name" placeholder="Enter customer name" onchange="validateInput(this)">
+                                <div class="error-message" id="customerName-error">Customer name is required</div>
+                            </div>
+                        </div>
+                        <div class="form-row-2col">
+                            <div class="form-group">
+                                <label>Programmer Name <span class="tooltip" data-tooltip="Person responsible for CAM programming">ℹ️</span></label>
+                                <input type="text" id="programmerName" placeholder="Enter programmer name">
+                            </div>
+                            <div class="form-group">
+                                <label>Operator Name <span class="tooltip" data-tooltip="Primary CNC operator">ℹ️</span></label>
+                                <input type="text" id="operatorName" placeholder="Enter operator name">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Project Description</label>
+                            <textarea id="projectDescription" placeholder="Enter detailed project description, special requirements, or notes..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Production Schedule -->
+                <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <div class="section-header-left">
+                            <span class="section-icon">⏰</span>
+                            <span>2. PRODUCTION SCHEDULE</span>
+                        </div>
+                        <span class="collapse-indicator">▼</span>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-row-2col">
+                            <div class="form-group">
+                                <label>Start Date <span class="required">*</span></label>
+                                <input type="date" id="startDate" onchange="validateInput(this); calculateAll()">
+                                <div class="error-message" id="startDate-error">Start date is required</div>
+                            </div>
+                            <div class="form-group">
+                                <label>Start Time</label>
+                                <input type="time" id="startTime" value="08:00" onchange="calculateAll()">
+                            </div>
+                        </div>
+                        <div class="form-row-2col">
+                            <div class="form-group">
+                                <label>Shifts Per Day</label>
+                                <select id="shiftsPerDay" onchange="calculateAll()">
+                                    <option value="1" selected>1 Shift - Single shift operation (8 hrs/day)</option>
+                                    <option value="2">2 Shifts - Double shift operation (16 hrs/day)</option>
+                                    <option value="3">3 Shifts - Triple shift operation (24 hrs/day)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Hours Per Shift</label>
+                                <input type="number" id="hoursPerShift" value="8" step="0.5" min="1" max="12" onchange="validateInput(this); calculateAll()">
+                                <div class="error-message" id="hoursPerShift-error">Must be between 1 and 12 hours</div>
+                            </div>
+                        </div>
+                        <div class="form-row-2col">
+                            <div class="form-group">
+                                <label>Working Days Per Week</label>
+                                <select id="workingDaysPerWeek" onchange="calculateAll()">
+                                    <option value="5">5 Days (Monday - Friday)</option>
+                                    <option value="6" selected>6 Days (Monday - Saturday)</option>
+                                    <option value="7">7 Days (Continuous Operation)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Daily Working Hours (Calculated)</label>
+                                <input type="text" id="displayDailyHours" readonly value="8.0 hrs">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Parts & Setups -->
+                <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <div class="section-header-left">
+                            <span class="section-icon">🔧</span>
+                            <span>3. PARTS & SETUPS</span>
+                        </div>
+                        <span class="collapse-indicator">▼</span>
+                    </div>
+                    <div class="section-body" id="partsContainer">
+                        <!-- Parts will be added here dynamically -->
+                    </div>
+                    
+                    <!-- Add Part Button Container (at the bottom) -->
+                    <div class="section-body">
+                        <div class="add-part-container">
+                            <p>📦 Click below to add another part to your project (Maximum 15 parts)</p>
+                            <button class="btn-warning btn-medium" onclick="addPartAndScroll()" id="addPartButton">
+                                <span>➕</span> Add New Part (<span id="partCountDisplay">0</span>/15)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 4: Project Summary -->
+                <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <div class="section-header-left">
+                            <span class="section-icon">📊</span>
+                            <span>4. PROJECT SUMMARY</span>
+                        </div>
+                        <span class="collapse-indicator">▼</span>
+                    </div>
+                    <div class="section-body">
+                        <table class="summary-table">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th style="text-align: right;">Hours</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Total Pre-Machining Time</td>
+                                    <td style="text-align: right;" id="sumPreMachining">0.00</td>
+                                    <td>CAM Programming + Process Planning + Material Prep</td>
+                                </tr>
+                                <tr>
+                                    <td>Total Setup Time</td>
+                                    <td style="text-align: right;" id="sumSetup">0.00</td>
+                                    <td>All fixture, tool, and prove-out time</td>
+                                </tr>
+                                <tr>
+                                    <td>Total Machining Time</td>
+                                    <td style="text-align: right;" id="sumMachining">0.00</td>
+                                    <td>All parts × quantities with safety factors applied</td>
+                                </tr>
+                                <tr>
+                                    <td>Total Quality/Post-Process</td>
+                                    <td style="text-align: right;" id="sumQuality">0.00</td>
+                                    <td>In-process checks + Final inspection + Deburring</td>
+                                </tr>
+                                <tr class="total-row">
+                                    <td><strong>TOTAL PROJECT HOURS</strong></td>
+                                    <td style="text-align: right;" id="sumTotalHours"><strong>0.00</strong></td>
+                                    <td>Sum of all activities</td>
+                                </tr>
+                                <tr class="total-row">
+                                    <td><strong>WORKING DAYS REQUIRED</strong></td>
+                                    <td style="text-align: right;" id="sumWorkingDays"><strong>0</strong></td>
+                                    <td>Actual working days needed</td>
+                                </tr>
+                                <tr class="total-row">
+                                    <td><strong>CALENDAR DAYS REQUIRED</strong></td>
+                                    <td style="text-align: right;" id="sumCalendarDays"><strong>0</strong></td>
+                                    <td>Including weekends and off-days</td>
+                                </tr>
+                                <tr class="completion-row">
+                                    <td><strong>ESTIMATED COMPLETION DATE</strong></td>
+                                    <td style="text-align: right;" id="sumFinishDate"><strong>-</strong></td>
+                                    <td id="sumFinishTime">Set start date to calculate</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="button-group">
+                    <button class="btn-success" onclick="saveProject()">
+                        <span>💾</span> Save Project
+                    </button>
+                    <button class="btn-info" onclick="document.getElementById('loadProjectInput').click()">
+                        <span>📂</span> Load Project
+                    </button>
+                    <input type="file" id="loadProjectInput" accept=".json" style="display: none;" onchange="loadProject(event)">
+                    <button class="btn-success" onclick="calculateAll()">
+                        <span>🔄</span> Recalculate All
+                    </button>
+                    <button class="btn-info" onclick="generatePrintReport()">
+                        <span>🖨️</span> Generate & Print Report
+                    </button>
+                    <button class="btn-primary" onclick="exportToCSV()">
+                        <span>📥</span> Export to CSV
+                    </button>
+                    <button class="btn-danger" onclick="resetAll()">
+                        <span>🗑️</span> Reset All
+                    </button>
+                </div>
+
+                <!-- Info Box -->
+                <div class="info-box">
+                    <h4>💡 Quick Guide & Best Practices</h4>
+                    <ul style="margin-left: 20px; line-height: 2;">
+                        <li><strong>Save/Load Projects:</strong> Save your work regularly as JSON files. Use "Load Project" to restore.</li>
+                        <li><strong>Multi-Part Projects:</strong> Maximum 15 parts per project. Click "Add New Part" at the bottom.</li>
+                        <li><strong>Multiple Setups:</strong> Each part can have unlimited operations (OP10, OP20, etc.).</li>
+                        <li><strong>Auto-Calculation:</strong> All fields calculate in real-time with validation.</li>
+                        <li><strong>Safety Factors:</strong> 1.2x (Proven) | 1.3x (Standard) | 1.35x (Complex) | 1.5x (Prototype) | 2.0x (Experimental)</li>
+                        <li><strong>Time Logic:</strong> Pre-machining is ONE-TIME per part. Setup is ONE-TIME per setup. Machining & Quality multiply by quantity.</li>
+                        <li><strong>Validation:</strong> Required fields are marked with * and validated automatically.</li>
+                        <li><strong>Print Report:</strong> Generates a clean, professional PDF without interface elements.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Report View -->
+    <div class="print-view">
+        <div class="print-report" id="printReportContent">
+            <!-- Report content will be generated here -->
+        </div>
+    </div>
+
+    <script>
+        let partCounter = 0;
+        let setupCounters = {};
+        const MAX_PARTS = 15;
+        let debounceTimer;
+
+        // ==================== INITIALIZATION ====================
+        window.onload = function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('startDate').value = today;
+            addPart();
+            showToast('Welcome!', 'CNC Production Scheduler Pro v3.0 loaded successfully', 'success');
+        };
+
+        // ==================== INPUT VALIDATION ====================
+        function validateInput(input) {
+            const id = input.id;
+            const value = input.value.trim();
+            const errorDiv = document.getElementById(`${id}-error`);
+            
+            let isValid = true;
+            
+            // Required field validation
+            if (input.hasAttribute('required') || input.closest('.form-group').querySelector('.required')) {
+                if (!value) {
+                    isValid = false;
+                    if (errorDiv) {
+                        errorDiv.classList.add('show');
+                        input.classList.add('error');
+                    }
+                } else {
+                    if (errorDiv) {
+                        errorDiv.classList.remove('show');
+                        input.classList.remove('error');
+                    }
+                }
+            }
+            
+            // Number validation
+            if (input.type === 'number') {
+                const num = parseFloat(value);
+                const min = parseFloat(input.min);
+                const max = parseFloat(input.max);
+                
+                if (isNaN(num) || (min !== undefined && num < min) || (max !== undefined && num > max)) {
+                    isValid = false;
+                    if (errorDiv) {
+                        errorDiv.classList.add('show');
+                        input.classList.add('error');
+                    }
+                } else {
+                    if (errorDiv) {
+                        errorDiv.classList.remove('show');
+                        input.classList.remove('error');
+                    }
+                }
+            }
+            
+            return isValid;
+        }
+
+        function validateAllInputs() {
+            let allValid = true;
+            const inputs = document.querySelectorAll('input[type="text"][id^="projectName"], input[type="text"][id^="customerName"], input[type="date"], input[type="number"]');
+            
+            inputs.forEach(input => {
+                if (!validateInput(input)) {
+                    allValid = false;
+                }
+            });
+            
+            return allValid;
+        }
+
+        // ==================== TOAST NOTIFICATION SYSTEM ====================
+        function showToast(title, message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            toast.innerHTML = `
+                <div class="toast-icon">${icons[type] || icons.info}</div>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('hiding');
+                setTimeout(() => {
+                    if (container.contains(toast)) {
+                        container.removeChild(toast);
+                    }
+                }, 300);
+            }, 4000);
+        }
+
+        // ==================== LOADING OVERLAY ====================
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.add('show');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('show');
+        }
+
+        // ==================== UPDATE PART COUNT DISPLAY ====================
+        function updatePartCountDisplay() {
+            const parts = document.querySelectorAll('.part-card');
+            const count = parts.length;
+            document.getElementById('partCountDisplay').textContent = count;
+            
+            const addButton = document.getElementById('addPartButton');
+            if (count >= MAX_PARTS) {
+                addButton.disabled = true;
+                addButton.innerHTML = '<span>🚫</span> Maximum Parts Reached (15/15)';
+            } else {
+                addButton.disabled = false;
+                addButton.innerHTML = `<span>➕</span> Add New Part (${count}/15)`;
+            }
+        }
+
+        // ==================== PROJECT DATA MANAGEMENT ====================
+        function getProjectData() {
+            const data = {
+                version: '3.0',
+                timestamp: new Date().toISOString(),
+                projectInfo: {
+                    projectName: document.getElementById('projectName').value,
+                    customerName: document.getElementById('customerName').value,
+                    programmerName: document.getElementById('programmerName').value,
+                    operatorName: document.getElementById('operatorName').value,
+                    projectDescription: document.getElementById('projectDescription').value
+                },
+                schedule: {
+                    startDate: document.getElementById('startDate').value,
+                    startTime: document.getElementById('startTime').value,
+                    shiftsPerDay: document.getElementById('shiftsPerDay').value,
+                    hoursPerShift: document.getElementById('hoursPerShift').value,
+                    workingDaysPerWeek: document.getElementById('workingDaysPerWeek').value
+                },
+                parts: []
+            };
+            
+            const parts = document.querySelectorAll('.part-card');
+            parts.forEach(part => {
+                const partId = part.id;
+                const partData = {
+                    partId: partId,
+                    name: document.getElementById(`${partId}_name`)?.value || '',
+                    material: document.getElementById(`${partId}_material`)?.value || 'SS316L',
+                    quantity: document.getElementById(`${partId}_quantity`)?.value || '1',
+                    notes: document.getElementById(`${partId}_notes`)?.value || '',
+                    cam: document.getElementById(`${partId}_cam`)?.value || '4.5',
+                    planning: document.getElementById(`${partId}_planning`)?.value || '2.0',
+                    matprep: document.getElementById(`${partId}_matprep`)?.value || '0.5',
+                    setups: []
+                };
+                
+                const setups = part.querySelectorAll('.setup-card');
+                setups.forEach(setup => {
+                    const setupId = setup.id;
+                    const setupData = {
+                        setupId: setupId,
+                        desc: document.getElementById(`${setupId}_desc`)?.value || '',
+                        fixture: document.getElementById(`${setupId}_fixture`)?.value || '1.5',
+                        tools: document.getElementById(`${setupId}_tools`)?.value || '2.0',
+                        proveout: document.getElementById(`${setupId}_proveout`)?.value || '1.0',
+                        roughing: document.getElementById(`${setupId}_roughing`)?.value || '45',
+                        finishing: document.getElementById(`${setupId}_finishing`)?.value || '30',
+                        safety: document.getElementById(`${setupId}_safety`)?.value || '1.35',
+                        inprocess: document.getElementById(`${setupId}_inprocess`)?.value || '15',
+                        inspection: document.getElementById(`${setupId}_inspection`)?.value || '30',
+                        deburr: document.getElementById(`${setupId}_deburr`)?.value || '20'
+                    };
+                    partData.setups.push(setupData);
+                });
+                
+                data.parts.push(partData);
+            });
+            
+            return data;
+        }
+
+        // ==================== SAVE PROJECT ====================
+        function saveProject() {
+            if (!validateAllInputs()) {
+                showToast(
+                    'Validation Error',
+                    'Please fill in all required fields correctly before saving.',
+                    'error'
+                );
+                return;
+            }
+
+            try {
+                showLoading();
+                const projectData = getProjectData();
+                const projectName = projectData.projectInfo.projectName || 'CNC_Project';
+                const timestamp = new Date().toISOString().split('T')[0];
+                const filename = `${projectName.replace(/\s+/g, '_')}_${timestamp}.json`;
+                
+                const jsonString = JSON.stringify(projectData, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = window.URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                hideLoading();
+                showToast(
+                    'Project Saved Successfully!',
+                    `File: ${filename} - ${projectData.parts.length} part(s) saved`,
+                    'success'
+                );
+            } catch (error) {
+                hideLoading();
+                console.error('Save error:', error);
+                showToast(
+                    'Save Failed',
+                    'An error occurred while saving the project. Please try again.',
+                    'error'
+                );
+            }
+        }
+
+        // ==================== LOAD PROJECT ====================
+        function loadProject(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!file.name.endsWith('.json')) {
+                showToast(
+                    'Invalid File Type',
+                    'Please select a valid JSON project file.',
+                    'error'
+                );
+                return;
+            }
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    showLoading();
+                    const projectData = JSON.parse(e.target.result);
+                    
+                    if (!projectData.projectInfo || !projectData.schedule || !projectData.parts) {
+                        throw new Error('Invalid project file structure');
+                    }
+
+                    if (projectData.parts.length > MAX_PARTS) {
+                        showToast(
+                            'Too Many Parts',
+                            `This project has ${projectData.parts.length} parts. Maximum is ${MAX_PARTS}. Only the first ${MAX_PARTS} will be loaded.`,
+                            'warning'
+                        );
+                    }
+                    
+                    document.getElementById('partsContainer').innerHTML = '';
+                    partCounter = 0;
+                    setupCounters = {};
+                    
+                    document.getElementById('projectName').value = projectData.projectInfo.projectName || '';
+                    document.getElementById('customerName').value = projectData.projectInfo.customerName || '';
+                    document.getElementById('programmerName').value = projectData.projectInfo.programmerName || '';
+                    document.getElementById('operatorName').value = projectData.projectInfo.operatorName || '';
+                    document.getElementById('projectDescription').value = projectData.projectInfo.projectDescription || '';
+                    
+                    document.getElementById('startDate').value = projectData.schedule.startDate || '';
+                    document.getElementById('startTime').value = projectData.schedule.startTime || '08:00';
+                    document.getElementById('shiftsPerDay').value = projectData.schedule.shiftsPerDay || '1';
+                    document.getElementById('hoursPerShift').value = projectData.schedule.hoursPerShift || '8';
+                    document.getElementById('workingDaysPerWeek').value = projectData.schedule.workingDaysPerWeek || '6';
+                    
+                    const partsToLoad = projectData.parts.slice(0, MAX_PARTS);
+                    partsToLoad.forEach((partData, partIndex) => {
+                        addPart();
+                        const partId = `part${partCounter}`;
+                        
+                        if (document.getElementById(`${partId}_name`)) {
+                            document.getElementById(`${partId}_name`).value = partData.name || '';
+                        }
+                        if (document.getElementById(`${partId}_material`)) {
+                            document.getElementById(`${partId}_material`).value = partData.material || 'SS316L';
+                        }
+                        if (document.getElementById(`${partId}_quantity`)) {
+                            document.getElementById(`${partId}_quantity`).value = partData.quantity || '1';
+                        }
+                        if (document.getElementById(`${partId}_notes`)) {
+                            document.getElementById(`${partId}_notes`).value = partData.notes || '';
+                        }
+                        if (document.getElementById(`${partId}_cam`)) {
+                            document.getElementById(`${partId}_cam`).value = partData.cam || '4.5';
+                        }
+                        if (document.getElementById(`${partId}_planning`)) {
+                            document.getElementById(`${partId}_planning`).value = partData.planning || '2.0';
+                        }
+                        if (document.getElementById(`${partId}_matprep`)) {
+                            document.getElementById(`${partId}_matprep`).value = partData.matprep || '0.5';
+                        }
+                        
+                        const defaultSetup = document.querySelector(`#${partId}_setups .setup-card`);
+                        if (defaultSetup) {
+                            defaultSetup.remove();
+                        }
+                        
+                        setupCounters[partId] = 0;
+                        
+                        partData.setups.forEach((setupData, setupIndex) => {
+                            addSetup(partId);
+                            const setupId = `${partId}_setup${setupCounters[partId]}`;
+                            
+                            if (document.getElementById(`${setupId}_desc`)) {
+                                document.getElementById(`${setupId}_desc`).value = setupData.desc || '';
+                                updateSetupName(setupId);
+                            }
+                            if (document.getElementById(`${setupId}_fixture`)) {
+                                document.getElementById(`${setupId}_fixture`).value = setupData.fixture || '1.5';
+                            }
+                            if (document.getElementById(`${setupId}_tools`)) {
+                                document.getElementById(`${setupId}_tools`).value = setupData.tools || '2.0';
+                            }
+                            if (document.getElementById(`${setupId}_proveout`)) {
+                                document.getElementById(`${setupId}_proveout`).value = setupData.proveout || '1.0';
+                            }
+                            if (document.getElementById(`${setupId}_roughing`)) {
+                                document.getElementById(`${setupId}_roughing`).value = setupData.roughing || '45';
+                            }
+                            if (document.getElementById(`${setupId}_finishing`)) {
+                                document.getElementById(`${setupId}_finishing`).value = setupData.finishing || '30';
+                            }
+                            if (document.getElementById(`${setupId}_safety`)) {
+                                document.getElementById(`${setupId}_safety`).value = setupData.safety || '1.35';
+                            }
+                            if (document.getElementById(`${setupId}_inprocess`)) {
+                                document.getElementById(`${setupId}_inprocess`).value = setupData.inprocess || '15';
+                            }
+                            if (document.getElementById(`${setupId}_inspection`)) {
+                                document.getElementById(`${setupId}_inspection`).value = setupData.inspection || '30';
+                            }
+                            if (document.getElementById(`${setupId}_deburr`)) {
+                                document.getElementById(`${setupId}_deburr`).value = setupData.deburr || '20';
+                            }
+                        });
+                    });
+                    
+                    calculateAll();
+                    event.target.value = '';
+                    hideLoading();
+                    
+                    showToast(
+                        'Project Loaded Successfully!',
+                        `${partsToLoad.length} part(s) loaded from ${file.name}`,
+                        'success'
+                    );
+                    
+                } catch (error) {
+                    hideLoading();
+                    console.error('Load error:', error);
+                    showToast(
+                        'Load Failed',
+                        'Could not load project file. File may be corrupted or invalid.',
+                        'error'
+                    );
+                    event.target.value = '';
+                }
+            };
+            
+            reader.onerror = function() {
+                hideLoading();
+                showToast(
+                    'File Read Error',
+                    'Could not read the selected file. Please try again.',
+                    'error'
+                );
+                event.target.value = '';
+            };
+            
+            reader.readAsText(file);
+        }
+
+        // ==================== SECTION MANAGEMENT ====================
+        function toggleSection(header) {
+            const section = header.parentElement;
+            section.classList.toggle('collapsed');
+        }
+
+        // ==================== PART MANAGEMENT ====================
+        function addPart() {
+            const parts = document.querySelectorAll('.part-card');
+            if (parts.length >= MAX_PARTS) {
+                showToast(
+                    'Maximum Parts Reached',
+                    `You can only add up to ${MAX_PARTS} parts per project.`,
+                    'warning'
+                );
+                return;
+            }
+
+            partCounter++;
+            const partId = `part${partCounter}`;
+            setupCounters[partId] = 0;
+            
+            const partCard = document.createElement('div');
+            partCard.className = 'part-card';
+            partCard.id = partId;
+            partCard.innerHTML = `
+                <div class="part-badge">PART ${partCounter}</div>
+                
+                <div class="part-header">
+                    <div class="part-title-section">
+                        <div style="font-size: 12px; color: #6c757d; margin-bottom: 5px;">PART IDENTIFICATION</div>
+                    </div>
+                    <button class="btn-danger btn-small" onclick="removePart('${partId}')">
+                        <span>🗑️</span> Remove Part
+                    </button>
+                </div>
+                
+                <div class="form-row-2col">
+                    <div class="form-group">
+                        <label>Part Name <span class="required">*</span></label>
+                        <input type="text" id="${partId}_name" placeholder="e.g., Hydraulic Manifold Block" oninput="debounceCalculate()">
+                    </div>
+                    <div class="form-group">
+                        <label>Material Type</label>
+                        <select id="${partId}_material" onchange="calculateAll()">
+                            <option value="SS316L">SS316L - Stainless Steel</option>
+                            <option value="SS304">SS304 - Stainless Steel</option>
+                            <option value="Al6061">Al6061 - Aluminum</option>
+                            <option value="Al7075">Al7075 - Aluminum</option>
+                            <option value="Mild Steel">Mild Steel</option>
+                            <option value="Titanium">Titanium Ti-6Al-4V</option>
+                            <option value="Brass">Brass</option>
+                            <option value="Copper">Copper</option>
+                            <option value="MDF">MDF - Medium Density Fiberboard</option>
+                            <option value="Tooling Board">Tooling Board (Polyurethane)</option>
+                            <option value="Tooling Paste">Tooling Paste (Epoxy/Resin)</option>
+                            <option value="Acrylic">Acrylic (PMMA)</option>
+                            <option value="PVC">PVC - Polyvinyl Chloride</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row-2col">
+                    <div class="form-group">
+                        <label>Quantity <span class="required">*</span></label>
+                        <input type="number" id="${partId}_quantity" value="1" min="1" max="1000" oninput="validateInput(this); debounceCalculate()">
+                        <div class="error-message" id="${partId}_quantity-error">Quantity must be between 1 and 1000</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Part Notes</label>
+                        <input type="text" id="${partId}_notes" placeholder="Special requirements, tolerances, finish, etc.">
+                    </div>
+                </div>
+
+                <div class="section-divider">⚙️ PRE-MACHINING (ENGINEERING) - One-Time Per Part</div>
+                <div class="setup-grid">
+                    <div class="form-group">
+                        <label>CAM Programming (hours)</label>
+                        <input type="number" id="${partId}_cam" value="4.5" step="0.5" min="0" max="100" oninput="validateInput(this); debounceCalculate()">
+                        <div class="error-message" id="${partId}_cam-error">Must be between 0 and 100 hours</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Process Planning (hours)</label>
+                        <input type="number" id="${partId}_planning" value="2.0" step="0.5" min="0" max="100" oninput="validateInput(this); debounceCalculate()">
+                        <div class="error-message" id="${partId}_planning-error">Must be between 0 and 100 hours</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Material Prep (hours)</label>
+                        <input type="number" id="${partId}_matprep" value="0.5" step="0.25" min="0" max="100" oninput="validateInput(this); debounceCalculate()">
+                        <div class="error-message" id="${partId}_matprep-error">Must be between 0 and 100 hours</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Pre-Machining Subtotal</label>
+                        <input type="number" id="${partId}_subtotalPre" readonly value="0" style="font-weight: 700; font-size: 16px;">
+                    </div>
+                </div>
+
+                <div class="section-divider" style="margin-top: 30px;">🔧 SETUPS & OPERATIONS</div>
+                
+                <div id="${partId}_setupsContainer">
+                    <div id="${partId}_setups">
+                        <!-- Setups will be added here -->
+                    </div>
+                    
+                    <!-- Add Setup Button at the bottom of setups -->
+                    <div class="add-setup-container" id="${partId}_addSetupContainer">
+                        <button class="btn-warning btn-medium" onclick="addSetupAndScroll('${partId}')">
+                            <span>➕</span> Add Setup to Part ${partCounter}
+                        </button>
+                    </div>
+                </div>
+
+                <div class="part-summary">
+                    <div class="summary-item">
+                        <div class="summary-label">Total Hours</div>
+                        <div class="summary-value" id="${partId}_totalHours">0.00</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Pre-Machining</div>
+                        <div class="summary-value" id="${partId}_displayPre">0.00</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Setup</div>
+                        <div class="summary-value" id="${partId}_displaySetup">0.00</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Machining</div>
+                        <div class="summary-value" id="${partId}_displayMach">0.00</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Quality</div>
+                        <div class="summary-value" id="${partId}_displayQual">0.00</div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('partsContainer').appendChild(partCard);
+            addSetup(partId);
+            calculateAll();
+            updatePartCountDisplay();
+        }
+
+        function addPartAndScroll() {
+            addPart();
+            setTimeout(() => {
+                const newPart = document.getElementById(`part${partCounter}`);
+                if (newPart) {
+                    newPart.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
+        }
+
+        function removePart(partId) {
+            if (confirm('Are you sure you want to remove this part and all its setups?')) {
+                document.getElementById(partId).remove();
+                delete setupCounters[partId];
+                calculateAll();
+                updatePartCountDisplay();
+                showToast('Part Removed', 'Part and all its setups have been deleted', 'info');
+            }
+        }
+
+        // ==================== SETUP MANAGEMENT ====================
+        function addSetup(partId) {
+            setupCounters[partId]++;
+            const setupCount = setupCounters[partId];
+            const setupId = `${partId}_setup${setupCount}`;
+            
+            const setupCard = document.createElement('div');
+            setupCard.className = 'setup-card';
+            setupCard.id = setupId;
+            setupCard.innerHTML = `
+                <div class="setup-header">
+                    <div class="setup-title">
+                        <span style="background: #f2994a; color: white; padding: 5px 12px; border-radius: 20px; font-size: 12px;">SETUP ${setupCount}</span>
+                        <span id="${setupId}_displayName" style="margin-left: 10px; color: #6c757d;">Unnamed Setup</span>
+                    </div>
+                    <button class="btn-danger btn-small" onclick="removeSetup('${setupId}', '${partId}')">
+                        <span>🗑️</span> Remove
+                    </button>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label>Setup Description / Operation</label>
+                    <input type="text" id="${setupId}_desc" placeholder="e.g., OP10 - Rough Milling, OP20 - Finish Milling" oninput="updateSetupName('${setupId}'); debounceCalculate();">
+                </div>
+
+                <div class="section-divider" style="font-size: 12px;">⚙️ SETUP TIME (One-Time Per Setup)</div>
+                <div class="setup-grid">
+                    <div class="form-group">
+                        <label>Fixture Setup (hours)</label>
+                        <input type="number" id="${setupId}_fixture" value="1.5" step="0.25" min="0" max="50" oninput="validateInput(this); debounceCalculate()">
+                        <div class="error-message" id="${setupId}_fixture-error">Must be between 0 and 50 hours</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Tool Setup (hours)</label>
+                        <input type="number" id="${setupId}_tools" value="2.0" step="0.25" min="0" max="50" oninput="validateInput(this); debounceCalculate()">
+                        <div class="error-message" id="${setupId}_tools-error">Must be between 0 and 50 hours</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Prove-Out (hours)</label>
+                        <input type="number" id="${setupId}_proveout" value="1.0" step="0.25" min="0" max="50" oninput="validateInput(this); debounceCalculate()">
+                        <div class="error-message" id="${setupId}_proveout-error">Must be between 0 and 50 hours</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Setup Subtotal</label>
+                        <input type="number" id="${setupId}_subtotalSetup" readonly value="0">
+                    </div>
+                </div>
+
+                <div class="section-divider" style="font-size: 12px;">⏱️ MACHINING TIME (Per Part - Multiplied by Quantity)</div>
+                <div class="setup-grid">
+                    <div class="form-group">
+                        <label>Roughing Time (minutes)</label>
+                        <input type="number" id="${setupId}_roughing" value="45" step="5" min="0" max="1440" oninput="validateInput(this); debounceCalculate()">
+                        <div class="error-message" id="${setupId}_roughing-error">Must be between 0 and 1440 minutes</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Finishing Time (minutes)</label>
+                        <input type="number" id="${setupId}_finishing" value="30" step="5" min="0" max="1440" oninput="validateInput(this); debounceCalculate()">
+                        <div class="error-message" id="${setupId}_finishing-error">Must be between 0 and 1440 minutes</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Safety Factor</label>
+                        <select id="${setupId}_safety" onchange="calculateAll()">
+                            <option value="1.1">1.1x - Proven/Very Simple</option>
+                            <option value="1.2">1.2x - Simple/Standard</option>
+                            <option value="1.3">1.3x - Moderate</option>
+                            <option value="1.35" selected>1.35x - Complex/Tight Tolerance</option>
+                            <option value="1.5">1.5x - Prototype/Unknown</option>
+                            <option value="1.6">1.6x - Very Complex</option>
+                            <option value="2.0">2.0x - Extremely Complex/Experimental</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Machining Subtotal (hours)</label>
+                        <input type="number" id="${setupId}_subtotalMach" readonly value="0">
+                    </div>
+                </div>
+
+                <div class="section-divider" style="font-size: 12px;">✓ QUALITY & POST-PROCESS (Per Part - Multiplied by Quantity)</div>
+                <div class="setup-grid">
+                    <div class="form-group">
+                        <label>In-Process Checks (minutes)</label>
+                        <input type="number" id="${setupId}_inprocess" value="15" step="5" min="0" max="480" oninput="validateInput(this); debounceCalculate()">
+                        <div class="error-message" id="${setupId}_inprocess-error">Must be between 0 and 480 minutes</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Final Inspection (minutes)</label>
+                        <input type="number" id="${setupId}_inspection" value="30" step="5" min="0" max="480" oninput="validateInput(this); debounceCalculate()">
+                        <div class="error-message" id="${setupId}_inspection-error">Must be between 0 and 480 minutes</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Deburring/Cleaning (minutes)</label>
+                        <input type="number" id="${setupId}_deburr" value="20" step="5" min="0" max="480" oninput="validateInput(this); debounceCalculate()">
+                        <div class="error-message" id="${setupId}_deburr-error">Must be between 0 and 480 minutes</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Quality Subtotal (hours)</label>
+                        <input type="number" id="${setupId}_subtotalQual" readonly value="0">
+                    </div>
+                </div>
+
+                <div style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); padding: 15px; border-radius: 8px; margin-top: 20px; font-weight: 600; border-left: 4px solid #f2c94c;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Setup Total Time:</span>
+                        <span style="font-size: 20px; color: #f2994a;" id="${setupId}_totalHours">0.00 hours</span>
+                    </div>
+                </div>
+            `;
+            
+            const setupsContainer = document.getElementById(`${partId}_setups`);
+            setupsContainer.appendChild(setupCard);
+            calculateAll();
+        }
+
+        function addSetupAndScroll(partId) {
+            addSetup(partId);
+            setTimeout(() => {
+                const setupCount = setupCounters[partId];
+                const newSetup = document.getElementById(`${partId}_setup${setupCount}`);
+                if (newSetup) {
+                    newSetup.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
+        }
+
+        function removeSetup(setupId, partId) {
+            const setups = document.querySelectorAll(`#${partId}_setups .setup-card`);
+            if (setups.length === 1) {
+                showToast(
+                    'Cannot Remove',
+                    'Each part must have at least one setup.',
+                    'warning'
+                );
+                return;
+            }
+
+            if (confirm('Are you sure you want to remove this setup?')) {
+                document.getElementById(setupId).remove();
+                calculateAll();
+                showToast('Setup Removed', 'Setup has been deleted', 'info');
+            }
+        }
+
+        function updateSetupName(setupId) {
+            const desc = document.getElementById(`${setupId}_desc`).value;
+            const displayName = document.getElementById(`${setupId}_displayName`);
+            if (displayName) {
+                displayName.textContent = desc || 'Unnamed Setup';
+            }
+        }
+
+        // ==================== DEBOUNCED CALCULATION ====================
+        function debounceCalculate() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                calculateAll();
+            }, 300);
+        }
+
+        // ==================== CALCULATION ENGINE (FIXED & OPTIMIZED) ====================
+        function calculateAll() {
+            let projectTotalHours = 0;
+            let projectPreMachining = 0;
+            let projectSetup = 0;
+            let projectMachining = 0;
+            let projectQuality = 0;
+            let totalParts = 0;
+            let totalSetups = 0;
+
+            const parts = document.querySelectorAll('.part-card');
+            totalParts = parts.length;
+            
+            parts.forEach(part => {
+                const partId = part.id;
+                const quantity = Math.max(1, parseFloat(document.getElementById(`${partId}_quantity`)?.value) || 1);
+                
+                // Pre-machining (once per part, NOT multiplied by quantity)
+                const cam = Math.max(0, parseFloat(document.getElementById(`${partId}_cam`)?.value) || 0);
+                const planning = Math.max(0, parseFloat(document.getElementById(`${partId}_planning`)?.value) || 0);
+                const matprep = Math.max(0, parseFloat(document.getElementById(`${partId}_matprep`)?.value) || 0);
+                const subtotalPre = cam + planning + matprep;
+                
+                if (document.getElementById(`${partId}_subtotalPre`)) {
+                    document.getElementById(`${partId}_subtotalPre`).value = subtotalPre.toFixed(2);
+                }
+                
+                let partSetupTotal = 0;
+                let partMachiningTotal = 0;
+                let partQualityTotal = 0;
+                
+                // Calculate all setups
+                const setups = part.querySelectorAll('.setup-card');
+                totalSetups += setups.length;
+                
+                setups.forEach(setup => {
+                    const setupId = setup.id;
+                    
+                    // Setup time (once per setup, NOT multiplied by quantity)
+                    const fixture = Math.max(0, parseFloat(document.getElementById(`${setupId}_fixture`)?.value) || 0);
+                    const tools = Math.max(0, parseFloat(document.getElementById(`${setupId}_tools`)?.value) || 0);
+                    const proveout = Math.max(0, parseFloat(document.getElementById(`${setupId}_proveout`)?.value) || 0);
+                    const setupTotal = fixture + tools + proveout;
+                    
+                    if (document.getElementById(`${setupId}_subtotalSetup`)) {
+                        document.getElementById(`${setupId}_subtotalSetup`).value = setupTotal.toFixed(2);
+                    }
+                    
+                    // Machining (MULTIPLIED by quantity)
+                    const roughing = Math.max(0, parseFloat(document.getElementById(`${setupId}_roughing`)?.value) || 0);
+                    const finishing = Math.max(0, parseFloat(document.getElementById(`${setupId}_finishing`)?.value) || 0);
+                    const safety = parseFloat(document.getElementById(`${setupId}_safety`)?.value) || 1.35;
+                    const machiningMin = (roughing + finishing) * safety;
+                    const machiningHrs = (machiningMin / 60) * quantity;
+                    
+                    if (document.getElementById(`${setupId}_subtotalMach`)) {
+                        document.getElementById(`${setupId}_subtotalMach`).value = machiningHrs.toFixed(2);
+                    }
+                    
+                    // Quality (MULTIPLIED by quantity)
+                    const inprocess = Math.max(0, parseFloat(document.getElementById(`${setupId}_inprocess`)?.value) || 0);
+                    const inspection = Math.max(0, parseFloat(document.getElementById(`${setupId}_inspection`)?.value) || 0);
+                    const deburr = Math.max(0, parseFloat(document.getElementById(`${setupId}_deburr`)?.value) || 0);
+                    const qualityMin = inprocess + inspection + deburr;
+                    const qualityHrs = (qualityMin / 60) * quantity;
+                    
+                    if (document.getElementById(`${setupId}_subtotalQual`)) {
+                        document.getElementById(`${setupId}_subtotalQual`).value = qualityHrs.toFixed(2);
+                    }
+                    
+                    const setupTotalHours = setupTotal + machiningHrs + qualityHrs;
+                    if (document.getElementById(`${setupId}_totalHours`)) {
+                        document.getElementById(`${setupId}_totalHours`).textContent = setupTotalHours.toFixed(2) + ' hours';
+                    }
+                    
+                    partSetupTotal += setupTotal;
+                    partMachiningTotal += machiningHrs;
+                    partQualityTotal += qualityHrs;
+                });
+                
+                const partTotal = subtotalPre + partSetupTotal + partMachiningTotal + partQualityTotal;
+                
+                // Update part summary
+                if (document.getElementById(`${partId}_totalHours`)) {
+                    document.getElementById(`${partId}_totalHours`).textContent = partTotal.toFixed(2);
+                }
+                if (document.getElementById(`${partId}_displayPre`)) {
+                    document.getElementById(`${partId}_displayPre`).textContent = subtotalPre.toFixed(2);
+                }
+                if (document.getElementById(`${partId}_displaySetup`)) {
+                    document.getElementById(`${partId}_displaySetup`).textContent = partSetupTotal.toFixed(2);
+                }
+                if (document.getElementById(`${partId}_displayMach`)) {
+                    document.getElementById(`${partId}_displayMach`).textContent = partMachiningTotal.toFixed(2);
+                }
+                if (document.getElementById(`${partId}_displayQual`)) {
+                    document.getElementById(`${partId}_displayQual`).textContent = partQualityTotal.toFixed(2);
+                }
+                
+                projectTotalHours += partTotal;
+                projectPreMachining += subtotalPre;
+                projectSetup += partSetupTotal;
+                projectMachining += partMachiningTotal;
+                projectQuality += partQualityTotal;
+            });
+            
+            // Update project summary
+            document.getElementById('sumPreMachining').textContent = projectPreMachining.toFixed(2);
+            document.getElementById('sumSetup').textContent = projectSetup.toFixed(2);
+            document.getElementById('sumMachining').textContent = projectMachining.toFixed(2);
+            document.getElementById('sumQuality').textContent = projectQuality.toFixed(2);
+            document.getElementById('sumTotalHours').textContent = projectTotalHours.toFixed(2);
+            
+            // Update stats
+            document.getElementById('statTotalHours').textContent = projectTotalHours.toFixed(1);
+            document.getElementById('statTotalParts').textContent = totalParts;
+            document.getElementById('statTotalSetups').textContent = totalSetups;
+            
+            // Update progress bar
+            const maxHours = 200;
+            const progressPercent = Math.min((projectTotalHours / maxHours) * 100, 100);
+            document.getElementById('progressFill').style.width = progressPercent + '%';
+            
+            // Calculate schedule
+            calculateSchedule(projectTotalHours);
+        }
+
+        // ==================== SCHEDULE CALCULATION (FIXED) ====================
+        function calculateSchedule(totalHours) {
+            const shiftsPerDay = parseFloat(document.getElementById('shiftsPerDay').value) || 1;
+            const hoursPerShift = parseFloat(document.getElementById('hoursPerShift').value) || 8;
+            const workingDaysPerWeek = parseInt(document.getElementById('workingDaysPerWeek').value) || 6;
+            const startDateInput = document.getElementById('startDate').value;
+            const startTimeInput = document.getElementById('startTime').value;
+            
+            const dailyWorkingHours = shiftsPerDay * hoursPerShift;
+            document.getElementById('displayDailyHours').value = dailyWorkingHours.toFixed(1) + ' hrs';
+            
+            if (totalHours > 0 && dailyWorkingHours > 0) {
+                const workingDaysNeeded = Math.ceil(totalHours / dailyWorkingHours);
+                
+                // Calculate calendar days correctly
+                let calendarDays = 0;
+                if (workingDaysPerWeek === 7) {
+                    calendarDays = workingDaysNeeded;
+                } else {
+                    const fullWeeks = Math.floor(workingDaysNeeded / workingDaysPerWeek);
+                    const remainingWorkDays = workingDaysNeeded % workingDaysPerWeek;
+                    
+                    // Each full week = 7 calendar days
+                    calendarDays = fullWeeks * 7;
+                    
+                    // Add remaining work days
+                    if (remainingWorkDays > 0) {
+                        calendarDays += remainingWorkDays;
+                        
+                        // Add weekend days if needed
+                        const daysOffPerWeek = 7 - workingDaysPerWeek;
+                        if (daysOffPerWeek > 0 && remainingWorkDays > 0) {
+                            // Add 1-2 days for partial week depending on working days pattern
+                            calendarDays += Math.min(daysOffPerWeek, 2);
+                        }
+                    }
+                }
+                
+                document.getElementById('sumWorkingDays').textContent = workingDaysNeeded;
+                document.getElementById('sumCalendarDays').textContent = calendarDays;
+                document.getElementById('statCalendarDays').textContent = calendarDays;
+                
+                if (startDateInput) {
+                    const startDate = new Date(startDateInput + 'T' + (startTimeInput || '08:00'));
+                    const finishDate = new Date(startDate);
+                    let hoursRemaining = totalHours;
+                    let daysProcessed = 0;
+                    let workDaysCount = 0;
+                    
+                    while (hoursRemaining > 0 && daysProcessed < 365) {
+                        const dayOfWeek = finishDate.getDay();
+                        let isWorkingDay = true;
+                        
+                        // Check if it's a working day
+                        if (workingDaysPerWeek === 5 && (dayOfWeek === 0 || dayOfWeek === 6)) {
+                            isWorkingDay = false; // Sunday or Saturday
+                        } else if (workingDaysPerWeek === 6 && dayOfWeek === 0) {
+                            isWorkingDay = false; // Sunday only
+                        }
+                        
+                        if (isWorkingDay) {
+                            workDaysCount++;
+                            const hoursToday = Math.min(hoursRemaining, dailyWorkingHours);
+                            hoursRemaining -= hoursToday;
+                            
+                            if (hoursRemaining <= 0) {
+                                // Calculate finish time
+                                const startHour = startDate.getHours();
+                                const startMinute = startDate.getMinutes();
+                                const totalMinutes = startMinute + (hoursToday * 60);
+                                const finishHour = startHour + Math.floor(totalMinutes / 60);
+                                const finishMinute = Math.floor(totalMinutes % 60);
+                                
+                                finishDate.setHours(finishHour, finishMinute, 0);
+                                break;
+                            }
+                        }
+                        
+                        finishDate.setDate(finishDate.getDate() + 1);
+                        daysProcessed++;
+                    }
+                    
+                    const finishDateStr = finishDate.toLocaleDateString('en-GB', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    });
+                    
+                    const finishTimeStr = finishDate.toLocaleTimeString('en-GB', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    });
+                    
+                    document.getElementById('sumFinishDate').textContent = finishDateStr;
+                    document.getElementById('sumFinishTime').textContent = 'Approximately ' + finishTimeStr;
+                    document.getElementById('statCompletionDate').textContent = finishDate.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
+                } else {
+                    document.getElementById('sumFinishDate').textContent = 'Please set start date';
+                    document.getElementById('sumFinishTime').textContent = '-';
+                    document.getElementById('statCompletionDate').textContent = 'Not Set';
+                }
+            } else {
+                document.getElementById('sumWorkingDays').textContent = '0';
+                document.getElementById('sumCalendarDays').textContent = '0';
+                document.getElementById('sumFinishDate').textContent = '-';
+                document.getElementById('sumFinishTime').textContent = '-';
+                document.getElementById('statCalendarDays').textContent = '0';
+                document.getElementById('statCompletionDate').textContent = 'Not Set';
+            }
+}
+
+        // ==================== PRINT REPORT (OPTIMIZED) ====================
+        function generatePrintReport() {
+            if (!validateAllInputs()) {
+                showToast(
+                    'Validation Error',
+                    'Please fill in all required fields correctly before generating report.',
+                    'error'
+                );
+                return;
+            }
+
+            // Hide toasts before generating report
+            const toastContainer = document.getElementById('toastContainer');
+            const originalDisplay = toastContainer.style.display;
+            toastContainer.style.display = 'none';
+
+            const projectName = document.getElementById('projectName').value || 'Untitled Project';
+            const customerName = document.getElementById('customerName').value || 'Not Specified';
+            const programmerName = document.getElementById('programmerName').value || 'Not Assigned';
+            const operatorName = document.getElementById('operatorName').value || 'Not Assigned';
+            const projectDescription = document.getElementById('projectDescription').value || 'No description provided';
+            const today = new Date().toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
+            
+            let reportHTML = `
+                <div class="report-header">
+                    <div class="report-logo">Enata Industries LLC</div>
+                    <div class="report-title">CNC Production Schedule Report</div>
+                    <div class="report-subtitle">Multi-Part Manufacturing Timeline & Resource Planning</div>
+                    <div class="report-date">Generated: ${today}</div>
+                </div>
+
+                <div class="report-section">
+                    <div class="report-section-title">📋 Project Information</div>
+                    <div class="report-info-grid">
+                        <div class="report-info-item">
+                            <div class="report-info-label">Project Name</div>
+                            <div class="report-info-value">${projectName}</div>
+                        </div>
+                        <div class="report-info-item">
+                            <div class="report-info-label">Customer</div>
+                            <div class="report-info-value">${customerName}</div>
+                        </div>
+                        <div class="report-info-item">
+                            <div class="report-info-label">CAM Programmer</div>
+                            <div class="report-info-value">${programmerName}</div>
+                        </div>
+                        <div class="report-info-item">
+                            <div class="report-info-label">CNC Operator</div>
+                            <div class="report-info-value">${operatorName}</div>
+                        </div>
+                    </div>
+                    <div class="report-info-item" style="margin-top: 10px;">
+                        <div class="report-info-label">Project Description</div>
+                        <div class="report-info-value">${projectDescription}</div>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <div class="report-section-title">⏰ Production Schedule</div>
+                    <div class="report-info-grid">
+                        <div class="report-info-item">
+                            <div class="report-info-label">Start Date</div>
+                            <div class="report-info-value">${document.getElementById('startDate').value || 'Not Set'}</div>
+                        </div>
+                        <div class="report-info-item">
+                            <div class="report-info-label">Start Time</div>
+                            <div class="report-info-value">${document.getElementById('startTime').value}</div>
+                        </div>
+                        <div class="report-info-item">
+                            <div class="report-info-label">Shifts Per Day</div>
+                            <div class="report-info-value">${document.getElementById('shiftsPerDay').value} shift(s)</div>
+                        </div>
+                        <div class="report-info-item">
+                            <div class="report-info-label">Hours Per Shift</div>
+                            <div class="report-info-value">${document.getElementById('hoursPerShift').value} hours</div>
+                        </div>
+                        <div class="report-info-item">
+                            <div class="report-info-label">Working Days Per Week</div>
+                            <div class="report-info-value">${document.getElementById('workingDaysPerWeek').value} days</div>
+                        </div>
+                        <div class="report-info-item">
+                            <div class="report-info-label">Daily Working Hours</div>
+                            <div class="report-info-value">${(parseFloat(document.getElementById('shiftsPerDay').value) * parseFloat(document.getElementById('hoursPerShift').value)).toFixed(1)} hours</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <div class="report-section-title">🔧 Parts Breakdown</div>
+            `;
+            
+            // Add parts details
+            const parts = document.querySelectorAll('.part-card');
+            parts.forEach((part, partIndex) => {
+                const partId = part.id;
+                const partName = document.getElementById(`${partId}_name`)?.value || `Part ${partIndex + 1}`;
+                const material = document.getElementById(`${partId}_material`)?.value || 'Not Specified';
+                const quantity = document.getElementById(`${partId}_quantity`)?.value || '1';
+                const notes = document.getElementById(`${partId}_notes`)?.value || '-';
+                
+                reportHTML += `
+                    <div class="report-part-section">
+                        <div class="report-part-title">Part ${partIndex + 1}: ${partName}</div>
+                        <div class="report-part-info">
+                            <div><strong>Material:</strong> ${material}</div>
+                            <div><strong>Quantity:</strong> ${quantity}</div>
+                            <div><strong>Notes:</strong> ${notes}</div>
+                        </div>
+                        
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>Setup</th>
+                                    <th>Description</th>
+                                    <th style="text-align: right;">Setup</th>
+                                    <th style="text-align: right;">Machine</th>
+                                    <th style="text-align: right;">Quality</th>
+                                    <th style="text-align: right;">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                let partTotalHours = 0;
+                const setups = part.querySelectorAll('.setup-card');
+                setups.forEach((setup, setupIndex) => {
+                    const setupId = setup.id;
+                    const desc = document.getElementById(`${setupId}_desc`)?.value || `Setup ${setupIndex + 1}`;
+                    const setupHrs = parseFloat(document.getElementById(`${setupId}_subtotalSetup`)?.value) || 0;
+                    const machHrs = parseFloat(document.getElementById(`${setupId}_subtotalMach`)?.value) || 0;
+                    const qualHrs = parseFloat(document.getElementById(`${setupId}_subtotalQual`)?.value) || 0;
+                    const totalHrs = setupHrs + machHrs + qualHrs;
+                    partTotalHours += totalHrs;
+                    
+                    reportHTML += `
+                        <tr>
+                            <td>${setupIndex + 1}</td>
+                            <td>${desc}</td>
+                            <td style="text-align: right;">${setupHrs.toFixed(2)}</td>
+                            <td style="text-align: right;">${machHrs.toFixed(2)}</td>
+                            <td style="text-align: right;">${qualHrs.toFixed(2)}</td>
+                            <td style="text-align: right;"><strong>${totalHrs.toFixed(2)}</strong></td>
+                        </tr>
+                    `;
+                });
+                
+                const preMachining = parseFloat(document.getElementById(`${partId}_subtotalPre`)?.value) || 0;
+                partTotalHours += preMachining;
+                
+                reportHTML += `
+                        <tr class="total-row">
+                            <td colspan="5"><strong>Pre-Machining (CAM + Planning + Prep)</strong></td>
+                            <td style="text-align: right;"><strong>${preMachining.toFixed(2)}</strong></td>
+                        </tr>
+                        <tr class="total-row">
+                            <td colspan="5"><strong>PART TOTAL</strong></td>
+                            <td style="text-align: right;"><strong>${partTotalHours.toFixed(2)}</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+                </div>
+                `;
+            });
+            
+            reportHTML += `</div>`;
+            
+            // Project summary (compact)
+            reportHTML += `
+                <div class="report-section">
+                    <div class="report-section-title">📊 Project Summary</div>
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th style="text-align: right;">Hours</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Pre-Machining</td>
+                                <td style="text-align: right;">${document.getElementById('sumPreMachining').textContent}</td>
+                                <td>CAM + Planning + Material Prep</td>
+                            </tr>
+                            <tr>
+                                <td>Setup Time</td>
+                                <td style="text-align: right;">${document.getElementById('sumSetup').textContent}</td>
+                                <td>Fixture + Tools + Prove-Out</td>
+                            </tr>
+                            <tr>
+                                <td>Machining</td>
+                                <td style="text-align: right;">${document.getElementById('sumMachining').textContent}</td>
+                                <td>Cutting operations with safety factors</td>
+                            </tr>
+                            <tr>
+                                <td>Quality</td>
+                                <td style="text-align: right;">${document.getElementById('sumQuality').textContent}</td>
+                                <td>Inspection + Finishing</td>
+                            </tr>
+                            <tr class="total-row">
+                                <td><strong>TOTAL HOURS</strong></td>
+                                <td style="text-align: right;"><strong>${document.getElementById('sumTotalHours').textContent}</strong></td>
+                                <td><strong>All manufacturing activities</strong></td>
+                            </tr>
+                            <tr class="total-row">
+                                <td><strong>Working Days</strong></td>
+                                <td style="text-align: right;"><strong>${document.getElementById('sumWorkingDays').textContent}</strong></td>
+                                <td>Actual production days</td>
+                            </tr>
+                            <tr class="total-row">
+                                <td><strong>Calendar Days</strong></td>
+                                <td style="text-align: right;"><strong>${document.getElementById('sumCalendarDays').textContent}</strong></td>
+                                <td>Including weekends/off-days</td>
+                            </tr>
+                            <tr style="background: #e7f3ff; font-weight: 700;">
+                                <td><strong>COMPLETION DATE</strong></td>
+                                <td style="text-align: right;"><strong>${document.getElementById('sumFinishDate').textContent}</strong></td>
+                                <td><strong>${document.getElementById('sumFinishTime').textContent}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="report-signatures">
+                    <div class="signature-block">
+                        <div class="signature-line"></div>
+                        <div class="signature-label">Prepared By</div>
+                        <div class="signature-name">${programmerName}</div>
+                    </div>
+                    <div class="signature-block">
+                        <div class="signature-line"></div>
+                        <div class="signature-label">Reviewed By</div>
+                        <div class="signature-name">Production Manager</div>
+                    </div>
+                    <div class="signature-block">
+                        <div class="signature-line"></div>
+                        <div class="signature-label">Approved By</div>
+                        <div class="signature-name">Operations Director</div>
+                    </div>
+                </div>
+
+                <div class="report-footer">
+                    <p><strong>Enata Industries LLC</strong> | CNC Manufacturing Excellence</p>
+                    <p>This is a production estimate subject to change based on actual conditions.</p>
+                    <p>Document generated: ${today} | Scheduler v3.0 Final</p>
+                </div>
+            `;
+            
+            document.getElementById('printReportContent').innerHTML = reportHTML;
+            
+            // Small delay to ensure rendering
+            setTimeout(() => {
+                window.print();
+                // Restore toast container display after print
+                setTimeout(() => {
+                    toastContainer.style.display = originalDisplay;
+                }, 500);
+            }, 300);
+        }
+
+        // ==================== CSV EXPORT ====================
+        function exportToCSV() {
+            if (!validateAllInputs()) {
+                showToast(
+                    'Validation Error',
+                    'Please fill in all required fields correctly before exporting.',
+                    'error'
+                );
+                return;
+            }
+
+            try {
+                showLoading();
+                const projectName = document.getElementById('projectName').value || 'Project';
+                const timestamp = new Date().toISOString().split('T')[0];
+                
+                let csv = 'CNC PRODUCTION SCHEDULE & TIMELINE REPORT\n';
+                csv += 'Enata Industries LLC\n';
+                csv += 'Prepared by: Pavin Anilkumar Jayakumari - CNC Team Lead\n';
+                csv += 'Version: 3.0 Final\n\n';
+                
+                csv += `Project Name,${projectName}\n`;
+                csv += `Customer,${document.getElementById('customerName').value}\n`;
+                csv += `Programmer,${document.getElementById('programmerName').value}\n`;
+                csv += `Operator,${document.getElementById('operatorName').value}\n`;
+                csv += `Description,"${document.getElementById('projectDescription').value}"\n`;
+                csv += `Report Date,${timestamp}\n\n`;
+                
+                csv += 'PRODUCTION SCHEDULE\n';
+                csv += `Start Date,${document.getElementById('startDate').value}\n`;
+                csv += `Start Time,${document.getElementById('startTime').value}\n`;
+                csv += `Shifts Per Day,${document.getElementById('shiftsPerDay').value}\n`;
+                csv += `Hours Per Shift,${document.getElementById('hoursPerShift').value}\n`;
+                csv += `Working Days Per Week,${document.getElementById('workingDaysPerWeek').value}\n`;
+                csv += `Daily Working Hours,${(parseFloat(document.getElementById('shiftsPerDay').value) * parseFloat(document.getElementById('hoursPerShift').value)).toFixed(1)}\n\n`;
+                
+                csv += 'PARTS & SETUPS BREAKDOWN\n';
+                csv += 'Part,Setup,Description,Setup Hours,Machining Hours,Quality Hours,Total Hours,Material,Quantity,Notes\n';
+                
+                const parts = document.querySelectorAll('.part-card');
+                parts.forEach((part, partIdx) => {
+                    const partId = part.id;
+                    const partName = document.getElementById(`${partId}_name`)?.value || `Part ${partIdx + 1}`;
+                    const material = document.getElementById(`${partId}_material`)?.value || '';
+                    const quantity = document.getElementById(`${partId}_quantity`)?.value || '1';
+                    const notes = document.getElementById(`${partId}_notes`)?.value || '';
+                    
+                    const preMach = parseFloat(document.getElementById(`${partId}_subtotalPre`)?.value) || 0;
+                    csv += `"${partName}",Pre-Machining,CAM + Planning + Material Prep,${preMach.toFixed(2)},0,0,${preMach.toFixed(2)},"${material}",${quantity},"${notes}"\n`;
+                    
+                    const setups = part.querySelectorAll('.setup-card');
+                    setups.forEach((setup, setupIdx) => {
+                        const setupId = setup.id;
+                        const desc = document.getElementById(`${setupId}_desc`)?.value || `Setup ${setupIdx + 1}`;
+                        const setupHrs = document.getElementById(`${setupId}_subtotalSetup`)?.value || '0';
+                        const machHrs = document.getElementById(`${setupId}_subtotalMach`)?.value || '0';
+                        const qualHrs = document.getElementById(`${setupId}_subtotalQual`)?.value || '0';
+                        const totalHrs = (parseFloat(setupHrs) + parseFloat(machHrs) + parseFloat(qualHrs)).toFixed(2);
+                        
+                        csv += `"${partName}","Setup ${setupIdx + 1}","${desc}",${setupHrs},${machHrs},${qualHrs},${totalHrs},"${material}",${quantity},"${notes}"\n`;
+                    });
+                });
+                
+                csv += '\nPROJECT SUMMARY\n';
+                csv += `Category,Hours,Description\n`;
+                csv += `Pre-Machining,${document.getElementById('sumPreMachining').textContent},CAM + Planning + Material Prep\n`;
+                csv += `Setup,${document.getElementById('sumSetup').textContent},Fixture + Tools + Prove-Out\n`;
+                csv += `Machining,${document.getElementById('sumMachining').textContent},All cutting operations\n`;
+                csv += `Quality,${document.getElementById('sumQuality').textContent},Inspection + Finishing\n`;
+                csv += `TOTAL HOURS,${document.getElementById('sumTotalHours').textContent},All activities\n`;
+                csv += `Working Days,${document.getElementById('sumWorkingDays').textContent},Production days\n`;
+                csv += `Calendar Days,${document.getElementById('sumCalendarDays').textContent},Including weekends\n`;
+                csv += `Completion Date,"${document.getElementById('sumFinishDate').textContent}",${document.getElementById('sumFinishTime').textContent}\n`;
+                
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `CNC_Production_Schedule_${projectName.replace(/\s+/g, '_')}_${timestamp}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                hideLoading();
+                showToast('CSV Exported', `File downloaded successfully`, 'success');
+            } catch (error) {
+                hideLoading();
+                console.error('Export error:', error);
+                showToast('Export Failed', 'An error occurred while exporting. Please try again.', 'error');
+            }
+        }
+
+        // ==================== RESET ====================
+        function resetAll() {
+            if (confirm('⚠️ Are you sure you want to reset everything?\n\nThis will:\n• Remove all parts and setups\n• Clear all project information\n• Reset schedule settings\n\nThis action cannot be undone.')) {
+                document.getElementById('partsContainer').innerHTML = '';
+                partCounter = 0;
+                setupCounters = {};
+                
+                document.getElementById('projectName').value = 'PROTO-2026-045';
+                document.getElementById('customerName').value = 'Client Company Name';
+                document.getElementById('programmerName').value = '';
+                document.getElementById('operatorName').value = '';
+                document.getElementById('projectDescription').value = '';
+                
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('startDate').value = today;
+                document.getElementById('startTime').value = '08:00';
+                document.getElementById('shiftsPerDay').value = '1';
+                document.getElementById('hoursPerShift').value = '8';
+                document.getElementById('workingDaysPerWeek').value = '6';
+                
+                addPart();
+                updatePartCountDisplay();
+                showToast('Reset Complete', 'All data has been cleared', 'warning');
+            }
+        }
+    </script>
+</body>
+</html>
